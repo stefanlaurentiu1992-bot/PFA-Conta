@@ -259,6 +259,7 @@ function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const action = e.parameter.action || 'getAll';
   const sheet = e.parameter.sheet;
+  const callback = e.parameter.callback;
   let result = {};
   if (action === 'getAll') {
     Object.entries(SHEETS).forEach(([key, name]) => {
@@ -269,7 +270,12 @@ function doGet(e) {
     const sh = getOrCreateSheet(ss, SHEETS[sheet] || sheet);
     result = sh.getDataRange().getValues();
   }
-  return ContentService.createTextOutput(JSON.stringify({ok:true, data:result}))
+  const json = JSON.stringify({ok:true, data:result});
+  if (callback) {
+    return ContentService.createTextOutput(callback + '(' + json + ')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -837,28 +843,53 @@ function setSyncStatus(state, txt) {
 async function api(data) {
   setSyncStatus('syncing','Sincronizare...');
   try {
-    const r = await fetch(CFG.url, {method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'text/plain'}});
-    const j = await r.json();
-    setSyncStatus('ok','Sincronizat ✓');
-    return j;
+    await fetch(CFG.url, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(data)
+    });
+    setSyncStatus('ok','Salvat ✓');
+    return {ok:true};
   } catch(e) {
     setSyncStatus('error','Eroare conexiune');
     return {ok:false};
   }
 }
 
-async function apiGet(params) {
-  setSyncStatus('syncing','Se încarcă...');
-  try {
-    const qs = Object.entries(params).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&');
-    const r = await fetch(CFG.url+'?'+qs);
-    const j = await r.json();
-    setSyncStatus('ok','Sincronizat ✓');
-    return j;
-  } catch(e) {
-    setSyncStatus('error','Eroare');
-    return {ok:false};
-  }
+function apiGet(params) {
+  return new Promise((resolve) => {
+    setSyncStatus('syncing','Se încarcă...');
+    const cbName = 'pfaCb_' + Date.now();
+    const script = document.createElement('script');
+    const qs = Object.entries({...params, callback: cbName})
+      .map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+    script.src = CFG.url + '?' + qs;
+    let done = false;
+    window[cbName] = (data) => {
+      done = true;
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      setSyncStatus('ok','Sincronizat ✓');
+      resolve(data);
+    };
+    script.onerror = () => {
+      if (!done) {
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        setSyncStatus('error','Eroare încărcare');
+        resolve({ok:false});
+      }
+    };
+    setTimeout(() => {
+      if (!done) {
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        setSyncStatus('error','Timeout');
+        resolve({ok:false});
+      }
+    }, 15000);
+    document.head.appendChild(script);
+  });
 }
 
 function parseSheetData(rows, skip=1) {
