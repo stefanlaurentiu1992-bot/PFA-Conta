@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PFA Evidență Contabilă</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F6F2;
+  --surface: #FFFFFF;
+  --surface2: #F0EFE9;
+  --border: #E2E0D8;
+  --border2: #CCCAC0;
+  --text: #1A1917;
+  --text2: #6B6960;
+  --text3: #9E9C94;
+  --accent: #2D5BE3;
+  --accent-bg: #EEF2FD;
+  --green: #1A7A4A;
+  --green-bg: #E8F5EE;
+  --red: #C0392B;
+  --red-bg: #FDECEA;
+  --amber: #8B5E00;
+  --amber-bg: #FDF3DC;
+  --purple: #5B3FBE;
+  --purple-bg: #F0EDFC;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Sora', sans-serif;
+  --r: 8px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+/* SETUP SCREEN */
+#setup-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+.setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 2.5rem; max-width: 540px; width: 100%; }
+.setup-card h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+.setup-card p { color: var(--text2); font-size: 13px; margin-bottom: 1.5rem; line-height: 1.7; }
+.setup-step { background: var(--surface2); border-radius: var(--r); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.setup-step .step-num { font-family: var(--mono); font-size: 11px; color: var(--accent); font-weight: 500; margin-bottom: 4px; }
+.setup-step .step-title { font-weight: 500; font-size: 13px; margin-bottom: 4px; }
+.setup-step .step-desc { font-size: 12px; color: var(--text2); }
+.setup-step code { font-family: var(--mono); background: var(--border); padding: 1px 5px; border-radius: 4px; font-size: 11px; word-break: break-all; }
+.field-group { margin-bottom: 1rem; }
+.field-group label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+.field-group input { width: 100%; padding: 9px 12px; border: 1px solid var(--border2); border-radius: var(--r); font-family: var(--mono); font-size: 13px; background: var(--bg); color: var(--text); outline: none; }
+.field-group input:focus { border-color: var(--accent); }
+.btn-primary { width: 100%; padding: 11px; background: var(--accent); color: white; border: none; border-radius: var(--r); font-family: var(--sans); font-size: 14px; font-weight: 500; cursor: pointer; }
+.btn-primary:hover { opacity: 0.9; }
+.script-box { background: #1A1917; color: #E8F5EE; border-radius: var(--r); padding: 1rem; font-family: var(--mono); font-size: 11px; line-height: 1.8; overflow-x: auto; margin: 8px 0; white-space: pre; }
+.copy-btn { font-size: 11px; padding: 4px 10px; border: 1px solid var(--border2); border-radius: var(--r); background: var(--surface); cursor: pointer; color: var(--text2); }
+.copy-btn:hover { background: var(--surface2); }
+
+/* MAIN APP */
+#main-app { display: none; }
+.topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+.topbar-brand { font-weight: 600; font-size: 15px; letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px; }
+.topbar-brand span { font-family: var(--mono); font-size: 11px; color: var(--text3); font-weight: 400; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.sync-status { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 5px; font-family: var(--mono); }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+.sync-dot.syncing { background: var(--amber); animation: pulse 1s infinite; }
+.sync-dot.error { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.btn-sm { padding: 6px 12px; border: 1px solid var(--border2); border-radius: var(--r); background: transparent; font-family: var(--sans); font-size: 12px; cursor: pointer; color: var(--text); }
+.btn-sm:hover { background: var(--surface2); }
+
+.layout { display: flex; height: calc(100vh - 56px); }
+.sidebar { width: 200px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 1rem 0; overflow-y: auto; }
+.nav-section { padding: 0 0.75rem; margin-bottom: 0.5rem; }
+.nav-label { font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: 0.8px; text-transform: uppercase; padding: 0 0.5rem; margin-bottom: 4px; }
+.nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: var(--r); cursor: pointer; font-size: 13px; color: var(--text2); transition: all 0.1s; margin-bottom: 2px; }
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+.nav-divider { border: none; border-top: 1px solid var(--border); margin: 8px 12px; }
+
+.content { flex: 1; overflow-y: auto; padding: 1.5rem; }
+.page { display: none; }
+.page.active { display: block; }
+
+.page-header { margin-bottom: 1.5rem; }
+.page-header h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+.page-header p { font-size: 13px; color: var(--text2); margin-top: 3px; }
+
+/* METRICS */
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1rem 1.25rem; }
+.metric .m-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.metric .m-val { font-family: var(--mono); font-size: 20px; font-weight: 500; }
+.metric .m-val.green { color: var(--green); }
+.metric .m-val.red { color: var(--red); }
+.metric .m-val.blue { color: var(--accent); }
+.metric .m-val.amber { color: var(--amber); }
+.metric .m-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+/* CARDS */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1.25rem; margin-bottom: 1rem; }
+.card-title { font-size: 13px; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 6px; }
+.card-title svg { width: 14px; height: 14px; color: var(--text2); }
+
+/* FORM */
+.form-grid { display: grid; gap: 10px; margin-bottom: 10px; }
+.fg-2 { grid-template-columns: 1fr 1fr; }
+.fg-3 { grid-template-columns: 1fr 1fr 1fr; }
+.fg-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.form-group label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 4px; font-weight: 500; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border2); border-radius: var(--r);
+  font-family: var(--sans); font-size: 13px; background: var(--bg); color: var(--text); outline: none;
+}
+.form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+.form-group textarea { resize: vertical; min-height: 60px; }
+.form-group select { cursor: pointer; }
+.ded-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+.ded-100 { background: var(--green-bg); color: var(--green); }
+.ded-partial { background: var(--amber-bg); color: var(--amber); }
+.ded-0 { background: var(--red-bg); color: var(--red); }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-size: 11px; color: var(--text3); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+.tfoot-row td { font-weight: 600; background: var(--surface2); border-top: 2px solid var(--border2); font-family: var(--mono); }
+.empty-state { text-align: center; padding: 2.5rem; color: var(--text3); font-size: 13px; }
+
+/* BADGES */
+.badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+.b-inc { background: var(--green-bg); color: var(--green); }
+.b-exp { background: var(--red-bg); color: var(--red); }
+.b-mf { background: var(--purple-bg); color: var(--purple); }
+.b-inv { background: var(--amber-bg); color: var(--amber); }
+.b-acc { background: var(--accent-bg); color: var(--accent); }
+.b-cat { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+
+/* ACTIONS */
+.action-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+.action-left { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-add { padding: 8px 14px; background: var(--accent); color: white; border: none; border-radius: var(--r); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+.btn-add:hover { opacity: 0.9; }
+.btn-exp { padding: 7px 12px; border: 1px solid var(--border2); border-radius: var(--r); background: var(--surface); font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+.btn-exp:hover { background: var(--surface2); }
+.btn-del { background: none; border: none; cursor: pointer; color: var(--text3); padding: 4px; border-radius: 4px; }
+.btn-del:hover { color: var(--red); background: var(--red-bg); }
+.btn-edit { background: none; border: none; cursor: pointer; color: var(--text3); padding: 4px; border-radius: 4px; font-size: 12px; }
+.btn-edit:hover { color: var(--accent); background: var(--accent-bg); }
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.filter-row select, .filter-row input { padding: 6px 10px; border: 1px solid var(--border2); border-radius: var(--r); font-size: 12px; background: var(--surface); color: var(--text); cursor: pointer; }
+
+/* TAXE */
+.tax-block { margin-bottom: 1rem; }
+.tax-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.tax-row:last-child { border-bottom: none; }
+.tax-row .t-lbl { color: var(--text2); }
+.tax-row .t-val { font-family: var(--mono); font-weight: 500; }
+.tax-row .t-note { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.tax-total { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 2px solid var(--border2); margin-top: 4px; }
+.tax-total .t-lbl { font-weight: 600; font-size: 15px; }
+.tax-total .t-val { font-family: var(--mono); font-size: 20px; font-weight: 600; color: var(--red); }
+
+/* INFO BOXES */
+.info-box { background: var(--accent-bg); border: 1px solid #BFD0F8; border-radius: var(--r); padding: 10px 14px; font-size: 12px; color: #1A3A8F; margin-bottom: 1rem; line-height: 1.6; }
+.warn-box { background: var(--amber-bg); border: 1px solid #E8C96A; border-radius: var(--r); padding: 10px 14px; font-size: 12px; color: var(--amber); margin-bottom: 1rem; line-height: 1.6; }
+.success-box { background: var(--green-bg); border: 1px solid #A8D8BA; border-radius: var(--r); padding: 10px 14px; font-size: 12px; color: var(--green); margin-bottom: 1rem; }
+
+/* BAR CHARTS */
+.bar-chart { margin-top: 8px; }
+.bar-row { margin-bottom: 10px; }
+.bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
+.bar-label span:first-child { color: var(--text2); }
+.bar-label span:last-child { font-family: var(--mono); font-weight: 500; }
+.bar-track { background: var(--surface2); border-radius: 4px; height: 6px; }
+.bar-fill { height: 6px; border-radius: 4px; }
+.bar-green { background: var(--green); }
+.bar-red { background: var(--red); }
+.bar-blue { background: var(--accent); }
+.bar-amber { background: #D4A017; }
+
+/* AMORTIZARE */
+.amort-pct { width: 70px; }
+
+/* TABS within page */
+.page-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+.p-tab { padding: 8px 14px; font-size: 13px; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.p-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+.p-tab-content { display: none; }
+.p-tab-content.active { display: block; }
+
+/* LOADER */
+.loader { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* MOBILE */
+@media (max-width: 700px) {
+  .sidebar { display: none; }
+  .fg-4 { grid-template-columns: 1fr 1fr; }
+  .fg-3 { grid-template-columns: 1fr 1fr; }
+  .metrics { grid-template-columns: 1fr 1fr; }
+}
+
+/* MODAL */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; align-items: center; justify-content: center; }
+.modal-bg.open { display: flex; }
+.modal { background: var(--surface); border-radius: var(--r-lg); padding: 1.5rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
+.modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 1.25rem; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.25rem; }
+.btn-cancel { padding: 8px 14px; border: 1px solid var(--border2); border-radius: var(--r); background: transparent; font-size: 13px; cursor: pointer; }
+.btn-save { padding: 8px 14px; background: var(--accent); color: white; border: none; border-radius: var(--r); font-size: 13px; font-weight: 500; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <h1>PFA Evidență Contabilă</h1>
+    <p>Această aplicație salvează toate datele tale direct în Google Sheets. Urmează pașii de mai jos o singură dată, apoi intri cu URL-ul tău personal.</p>
+
+    <div class="setup-step">
+      <div class="step-num">PAS 1</div>
+      <div class="step-title">Creează un Google Spreadsheet nou</div>
+      <div class="step-desc">Mergi la <a href="https://sheets.google.com" target="_blank" style="color:var(--accent)">sheets.google.com</a> → creează un spreadsheet nou → dă-i un nume (ex. "PFA Evidență 2024").</div>
+    </div>
+
+    <div class="setup-step">
+      <div class="step-num">PAS 2</div>
+      <div class="step-title">Deschide Apps Script</div>
+      <div class="step-desc">În spreadsheet: <strong>Extensii → Apps Script</strong>. Șterge tot codul existent și lipește codul de mai jos:</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="copy-btn" onclick="copyScript()">Copiază codul</button></div>
+      <div class="script-box" id="script-code">const SHEETS = {
+  incasari: "Incasari",
+  cheltuieli: "Cheltuieli",
+  mijloace_fixe: "MijloaceFixe",
+  obiecte_inv: "ObiectInv",
+  contracte: "Contracte",
+  ref: "REF"
+};
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const result = handleRequest(ss, data);
+    return ContentService.createTextOutput(JSON.stringify({ok:true, data:result}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ok:false, error:err.message}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const action = e.parameter.action || 'getAll';
+  const sheet = e.parameter.sheet;
+  let result = {};
+  if (action === 'getAll') {
+    Object.entries(SHEETS).forEach(([key, name]) => {
+      const sh = getOrCreateSheet(ss, name);
+      result[key] = sh.getDataRange().getValues();
+    });
+  } else if (action === 'getSheet' && sheet) {
+    const sh = getOrCreateSheet(ss, SHEETS[sheet] || sheet);
+    result = sh.getDataRange().getValues();
+  }
+  return ContentService.createTextOutput(JSON.stringify({ok:true, data:result}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleRequest(ss, data) {
+  const {action, sheet, row, id} = data;
+  const sheetName = SHEETS[sheet] || sheet;
+  const sh = getOrCreateSheet(ss, sheetName);
+  if (action === 'append') {
+    sh.appendRow(row);
+    return {appended: true};
+  } else if (action === 'delete') {
+    const rows = sh.getDataRange().getValues();
+    for (let i = rows.length - 1; i >= 0; i--) {
+      if (String(rows[i][0]) === String(id)) {
+        sh.deleteRow(i + 1);
+        return {deleted: true};
+      }
+    }
+    return {deleted: false};
+  } else if (action === 'update') {
+    const rows = sh.getDataRange().getValues();
+    for (let i = 0; i < rows.length; i++) {
+      if (String(rows[i][0]) === String(id)) {
+        row.forEach((val, j) => sh.getRange(i + 1, j + 1).setValue(val));
+        return {updated: true};
+      }
+    }
+    return {updated: false};
+  } else if (action === 'initSheets') {
+    initHeaders(ss);
+    return {initialized: true};
+  }
+  return {};
+}
+
+function getOrCreateSheet(ss, name) {
+  return ss.getSheetByName(name) || ss.insertSheet(name);
+}
+
+function initHeaders(ss) {
+  const headers = {
+    "Incasari":     ["ID","Data","Categorie","Descriere","Client","Suma","Moneda","NrFact"],
+    "Cheltuieli":   ["ID","Data","Categorie","TipDed","ProcDed","Descriere","Furnizor","SumaBruta","SumaDeductibila","NrDoc"],
+    "MijloaceFixe": ["ID","Data","Denumire","Categorie","ValoareAchiz","DurataAmort","AmortizareLunara","DataPIF","NumarInv","Observatii"],
+    "ObiectInv":    ["ID","Data","Denumire","Cantitate","ValoareUnit","ValoareTotala","Locatie","Stare"],
+    "Contracte":    ["ID","DataInceput","DataSfarsit","Partener","Tip","Valoare","Moneda","Descriere","Stare"],
+    "REF":          ["ID","An","TotalVenituri","TotalCheltuieliDed","TotalCheltuieliPartial","TotalCheltuieliNeded","VenitNet","CAS","CASS","Impozit","TotalTaxe","Note"]
+  };
+  Object.entries(headers).forEach(([name, hdrs]) => {
+    const sh = getOrCreateSheet(ss, name);
+    if (sh.getLastRow() === 0) sh.appendRow(hdrs);
+  });
+}</div>
+    </div>
+
+    <div class="setup-step">
+      <div class="step-num">PAS 3</div>
+      <div class="step-title">Publică ca Web App</div>
+      <div class="step-desc">În Apps Script: <strong>Implementare → Implementare nouă → Aplicație web</strong><br>
+      — Execută ca: <strong>Eu (contul tău Google)</strong><br>
+      — Cine are acces: <strong>Oricine</strong><br>
+      → Autorizează → Copiază URL-ul generat</div>
+    </div>
+
+    <div class="setup-step">
+      <div class="step-num">PAS 4</div>
+      <div class="step-title">Introdu URL-ul web app mai jos</div>
+      <div class="step-desc">Lipește URL-ul copiat (începe cu https://script.google.com/macros/s/...)</div>
+    </div>
+
+    <div class="field-group" style="margin-top:1.25rem">
+      <label>URL Google Apps Script Web App</label>
+      <input type="text" id="sheet-url" placeholder="https://script.google.com/macros/s/..." />
+    </div>
+    <div class="field-group">
+      <label>Numele tău / PFA (pentru afișare)</label>
+      <input type="text" id="pfa-name" placeholder="ex. Ionescu Alexandru PFA" />
+    </div>
+    <button class="btn-primary" onclick="saveConfig()">Conectează și deschide aplicația</button>
+    <p id="setup-err" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      PFA Contabilitate
+      <span id="pfa-label"></span>
+    </div>
+    <div class="topbar-right">
+      <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-text">Sincronizat</span></div>
+      <button class="btn-sm" onclick="loadAll()">↻ Reîncarcă</button>
+      <button class="btn-sm" onclick="exportAllCSV()">↓ Export CSV</button>
+      <button class="btn-sm" onclick="resetConfig()">Deconectare</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="nav-section">
+        <div class="nav-label">Principal</div>
+        <div class="nav-item active" onclick="showPage('dashboard',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Tablou de bord
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Înregistrări</div>
+        <div class="nav-item" onclick="showPage('incasari',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          Încasări
+        </div>
+        <div class="nav-item" onclick="showPage('cheltuieli',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          Cheltuieli
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Active</div>
+        <div class="nav-item" onclick="showPage('mijloace',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+          Mijloace fixe
+        </div>
+        <div class="nav-item" onclick="showPage('obiecte',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+          Obiecte inventar
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Registre</div>
+        <div class="nav-item" onclick="showPage('rjip',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Registru RJIP
+        </div>
+        <div class="nav-item" onclick="showPage('ref',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Registru REF
+        </div>
+        <div class="nav-item" onclick="showPage('contracte',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75"/></svg>
+          Contracte
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Fiscal</div>
+        <div class="nav-item" onclick="showPage('taxe',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          Calcul taxe ANAF
+        </div>
+      </div>
+      <hr class="nav-divider">
+      <div class="nav-section">
+        <div class="nav-item" onclick="showPage('setari',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Setări
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <h2>Tablou de bord</h2>
+          <p id="dash-period">An fiscal curent</p>
+        </div>
+        <div class="metrics" id="dash-metrics">
+          <div class="metric"><div class="m-label">Total încasări</div><div class="m-val green" id="dm-inc">— lei</div></div>
+          <div class="metric"><div class="m-label">Cheltuieli deductibile</div><div class="m-val red" id="dm-chd">— lei</div></div>
+          <div class="metric"><div class="m-label">Venit net estimat</div><div class="m-val blue" id="dm-net">— lei</div></div>
+          <div class="metric"><div class="m-label">Taxe estimate</div><div class="m-val amber" id="dm-tax">— lei</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="card">
+            <div class="card-title">Încasări pe categorie</div>
+            <div id="chart-inc-dash"><div class="empty-state">Nicio înregistrare</div></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Cheltuieli pe categorie</div>
+            <div id="chart-chelt-dash"><div class="empty-state">Nicio înregistrare</div></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:1rem">
+          <div class="card-title">Ultimele 10 tranzacții</div>
+          <div id="dash-recent"><div class="empty-state">Nicio tranzacție</div></div>
+        </div>
+      </div>
+
+      <!-- INCASARI -->
+      <div class="page" id="page-incasari">
+        <div class="page-header"><h2>Încasări</h2><p>Toate veniturile din activitatea PFA</p></div>
+        <div class="card">
+          <div class="card-title">Adaugă încasare nouă</div>
+          <div class="form-grid fg-4">
+            <div class="form-group"><label>Data *</label><input type="date" id="i-data"></div>
+            <div class="form-group"><label>Categorie *</label>
+              <select id="i-cat">
+                <option value="Asigurări RCA/CASCO">Asigurări RCA/CASCO</option>
+                <option value="Asigurări viață/sănătate">Asigurări viață/sănătate</option>
+                <option value="Asigurări locuință/bunuri">Asigurări locuință/bunuri</option>
+                <option value="Pachete turistice">Pachete turistice</option>
+                <option value="Leasing PJ auto">Leasing PJ auto</option>
+                <option value="Leasing PJ echipamente">Leasing PJ echipamente</option>
+                <option value="Credite persoane juridice">Credite persoane juridice</option>
+                <option value="Credite persoane fizice">Credite persoane fizice</option>
+                <option value="Comisioane intermediere">Comisioane intermediere</option>
+                <option value="Alte venituri">Alte venituri</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Suma (lei) *</label><input type="number" id="i-suma" placeholder="0.00" min="0" step="0.01"></div>
+            <div class="form-group"><label>Nr. factură / document</label><input type="text" id="i-nrfact" placeholder="FA-001"></div>
+          </div>
+          <div class="form-grid fg-2">
+            <div class="form-group"><label>Client / Partener</label><input type="text" id="i-client" placeholder="Nume client, companie..."></div>
+            <div class="form-group"><label>Descriere</label><input type="text" id="i-desc" placeholder="Detalii tranzacție..."></div>
+          </div>
+          <button class="btn-add" onclick="addIncasare()">+ Adaugă încasare</button>
+        </div>
+        <div class="card">
+          <div class="action-bar">
+            <div class="filter-row">
+              <select id="i-f-cat" onchange="renderIncasari()"><option value="">Toate categoriile</option>
+                <option>Asigurări RCA/CASCO</option><option>Asigurări viață/sănătate</option><option>Asigurări locuință/bunuri</option>
+                <option>Pachete turistice</option><option>Leasing PJ auto</option><option>Leasing PJ echipamente</option>
+                <option>Credite persoane juridice</option><option>Credite persoane fizice</option><option>Comisioane intermediere</option><option>Alte venituri</option>
+              </select>
+              <select id="i-f-luna" onchange="renderIncasari()"><option value="">Toate lunile</option>
+                <option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option>
+                <option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option>
+              </select>
+            </div>
+            <button class="btn-exp" onclick="exportTable('inc')">↓ Export CSV</button>
+          </div>
+          <div class="table-wrap" id="tbl-incasari"><div class="empty-state">Nicio încasare înregistrată</div></div>
+        </div>
+      </div>
+
+      <!-- CHELTUIELI -->
+      <div class="page" id="page-cheltuieli">
+        <div class="page-header"><h2>Cheltuieli</h2><p>Cheltuieli deductibile total, parțial și nedeductibile</p></div>
+        <div class="warn-box">⚠ Cheltuielile parțiale (ex. telefon, mașină) se înregistrează cu suma totală — aplicația calculează automat suma deductibilă conform procentului ales.</div>
+        <div class="card">
+          <div class="card-title">Adaugă cheltuială</div>
+          <div class="form-grid fg-3">
+            <div class="form-group"><label>Data *</label><input type="date" id="c-data"></div>
+            <div class="form-group"><label>Categorie *</label>
+              <select id="c-cat" onchange="updateDed()">
+                <optgroup label="Deductibile 100%">
+                  <option value="Deplasări profesionale|100">Deplasări profesionale</option>
+                  <option value="Comunicații (telefon/internet)|100">Comunicații (telefon/internet)</option>
+                  <option value="Software și abonamente|100">Software și abonamente</option>
+                  <option value="Birotică și consumabile|100">Birotică și consumabile</option>
+                  <option value="Marketing și publicitate|100">Marketing și publicitate</option>
+                  <option value="Formare profesională|100">Formare profesională</option>
+                  <option value="Chirii birou|100">Chirii birou</option>
+                  <option value="Servicii contabilitate|100">Servicii contabilitate</option>
+                  <option value="Asigurări profesionale|100">Asigurări profesionale</option>
+                  <option value="CAS plătit|100">CAS plătit</option>
+                  <option value="CASS plătit|100">CASS plătit</option>
+                  <option value="Alte cheltuieli 100%|100">Alte cheltuieli 100%</option>
+                </optgroup>
+                <optgroup label="Deductibile parțial">
+                  <option value="Telefon personal+profesional|50">Telefon (50% deductibil)</option>
+                  <option value="Internet acasă+profesional|50">Internet acasă (50% deductibil)</option>
+                  <option value="Combustibil auto mixt|50">Combustibil auto (50% deductibil)</option>
+                  <option value="Întreținere auto mixtă|50">Întreținere auto (50% deductibil)</option>
+                  <option value="Utilități sediu acasă|50">Utilități sediu acasă (50%)</option>
+                  <option value="Chirie parțial birou|50">Chirie parțial birou (50%)</option>
+                  <option value="Protocol și reprezentare|50">Protocol/reprezentare (50%, pl. 2%VT)</option>
+                  <option value="Cheltuieli parțiale custom|custom">Cheltuieli parțiale (procent custom)</option>
+                </optgroup>
+                <optgroup label="Nedeductibile">
+                  <option value="Amenzi și penalități|0">Amenzi și penalități</option>
+                  <option value="Cheltuieli personale|0">Cheltuieli personale</option>
+                  <option value="Protocol peste plafon|0">Protocol peste plafon (2% VT)</option>
+                  <option value="Sponsorizări fără contract|0">Sponsorizări fără contract</option>
+                  <option value="Cheltuieli nedeductibile|0">Alte cheltuieli nedeductibile</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="form-group"><label>% Deductibilitate</label>
+              <input type="number" id="c-pct" value="100" min="0" max="100" step="5" oninput="calcDed()">
+            </div>
+          </div>
+          <div class="form-grid fg-4">
+            <div class="form-group"><label>Suma totală (lei) *</label><input type="number" id="c-suma" placeholder="0.00" step="0.01" oninput="calcDed()"></div>
+            <div class="form-group"><label>Suma deductibilă (lei)</label><input type="number" id="c-sumaded" placeholder="auto" step="0.01" style="background:#EEF2FD"></div>
+            <div class="form-group"><label>Furnizor</label><input type="text" id="c-furnizor" placeholder="Vodafone, OMV..."></div>
+            <div class="form-group"><label>Nr. document</label><input type="text" id="c-nrdoc" placeholder="Fact. 1234"></div>
+          </div>
+          <div class="form-grid fg-2">
+            <div class="form-group"><label>Descriere</label><input type="text" id="c-desc" placeholder="Detalii..."></div>
+            <div style="display:flex;align-items:flex-end;gap:8px;padding-bottom:2px">
+              <div id="c-ded-badge" class="ded-badge ded-100">✓ 100% deductibil</div>
+            </div>
+          </div>
+          <button class="btn-add" onclick="addCheltuiala()">+ Adaugă cheltuială</button>
+        </div>
+        <div class="card">
+          <div class="page-tabs">
+            <div class="p-tab active" onclick="switchTab(this,'ct-toate')">Toate</div>
+            <div class="p-tab" onclick="switchTab(this,'ct-ded100')">100% deductibile</div>
+            <div class="p-tab" onclick="switchTab(this,'ct-partial')">Parțial deductibile</div>
+            <div class="p-tab" onclick="switchTab(this,'ct-neded')">Nedeductibile</div>
+          </div>
+          <div class="action-bar">
+            <div class="filter-row">
+              <select id="c-f-luna" onchange="renderCheltuieli()"><option value="">Toate lunile</option>
+                <option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option>
+                <option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option>
+              </select>
+            </div>
+            <button class="btn-exp" onclick="exportTable('chelt')">↓ Export CSV</button>
+          </div>
+          <div class="p-tab-content active" id="ct-toate">
+            <div class="table-wrap" id="tbl-cheltuieli-toate"><div class="empty-state">Nicio cheltuială</div></div>
+          </div>
+          <div class="p-tab-content" id="ct-ded100">
+            <div class="table-wrap" id="tbl-cheltuieli-100"><div class="empty-state">Nicio cheltuială</div></div>
+          </div>
+          <div class="p-tab-content" id="ct-partial">
+            <div class="table-wrap" id="tbl-cheltuieli-partial"><div class="empty-state">Nicio cheltuială</div></div>
+          </div>
+          <div class="p-tab-content" id="ct-neded">
+            <div class="table-wrap" id="tbl-cheltuieli-neded"><div class="empty-state">Nicio cheltuială</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MIJLOACE FIXE -->
+      <div class="page" id="page-mijloace">
+        <div class="page-header"><h2>Mijloace fixe</h2><p>Active cu valoare ≥ 2.500 lei și durată de utilizare > 1 an. Amortizare lunară automată.</p></div>
+        <div class="info-box">ℹ Pragul mijloacelor fixe este 2.500 lei conform Codului Fiscal. Sub această valoare → Obiecte de inventar.</div>
+        <div class="card">
+          <div class="card-title">Înregistrează mijloc fix</div>
+          <div class="form-grid fg-3">
+            <div class="form-group"><label>Data achiziției *</label><input type="date" id="mf-data"></div>
+            <div class="form-group"><label>Denumire *</label><input type="text" id="mf-den" placeholder="Laptop Dell XPS, Autoturism..."></div>
+            <div class="form-group"><label>Categorie</label>
+              <select id="mf-cat">
+                <option>Echipamente IT</option><option>Mobilier și dotări</option><option>Autoturism</option>
+                <option>Echipamente birou</option><option>Instalații</option><option>Altele</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid fg-4">
+            <div class="form-group"><label>Valoare achiziție (lei) *</label><input type="number" id="mf-val" placeholder="0.00" oninput="calcAmort()"></div>
+            <div class="form-group"><label>Durată amortizare (luni) *</label><input type="number" id="mf-dur" placeholder="36" oninput="calcAmort()"></div>
+            <div class="form-group"><label>Amortizare lunară (lei)</label><input type="number" id="mf-amortl" style="background:#EEF2FD" readonly></div>
+            <div class="form-group"><label>Nr. inventar</label><input type="text" id="mf-nrinv" placeholder="MF-001"></div>
+          </div>
+          <div class="form-grid fg-2">
+            <div class="form-group"><label>Data punerii în funcțiune</label><input type="date" id="mf-datapif"></div>
+            <div class="form-group"><label>Observații</label><input type="text" id="mf-obs" placeholder="Factură, serie..."></div>
+          </div>
+          <button class="btn-add" onclick="addMijlocFix()">+ Adaugă mijloc fix</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Registrul mijloacelor fixe</div>
+          <div class="table-wrap" id="tbl-mf"><div class="empty-state">Niciun mijloc fix înregistrat</div></div>
+        </div>
+      </div>
+
+      <!-- OBIECTE INVENTAR -->
+      <div class="page" id="page-obiecte">
+        <div class="page-header"><h2>Obiecte de inventar</h2><p>Active cu valoare sub 2.500 lei — telefoane, tablete, accesorii, mobilier mic etc.</p></div>
+        <div class="info-box">ℹ Un telefon cumpărat pentru PFA cu valoare sub 2.500 lei se înregistrează ca obiect de inventar. Valoarea lui este cheltuială deductibilă integral în luna achiziției.</div>
+        <div class="card">
+          <div class="card-title">Adaugă obiect de inventar</div>
+          <div class="form-grid fg-4">
+            <div class="form-group"><label>Data *</label><input type="date" id="oi-data"></div>
+            <div class="form-group"><label>Denumire *</label><input type="text" id="oi-den" placeholder="iPhone 14, Tastatură..."></div>
+            <div class="form-group"><label>Cantitate</label><input type="number" id="oi-cant" value="1" min="1"></div>
+            <div class="form-group"><label>Valoare/buc (lei) *</label><input type="number" id="oi-valunit" placeholder="0.00" oninput="calcOI()"></div>
+          </div>
+          <div class="form-grid fg-3">
+            <div class="form-group"><label>Valoare totală (lei)</label><input type="number" id="oi-valtot" style="background:#EEF2FD" readonly></div>
+            <div class="form-group"><label>Locație / Utilizare</label><input type="text" id="oi-loc" placeholder="Birou, teren..."></div>
+            <div class="form-group"><label>Stare</label>
+              <select id="oi-stare"><option>Activ</option><option>Casat</option><option>Cedat</option></select>
+            </div>
+          </div>
+          <button class="btn-add" onclick="addObiectInv()">+ Adaugă obiect</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Lista obiecte de inventar</div>
+          <div class="table-wrap" id="tbl-oi"><div class="empty-state">Niciun obiect înregistrat</div></div>
+        </div>
+      </div>
+
+      <!-- RJIP -->
+      <div class="page" id="page-rjip">
+        <div class="page-header"><h2>Registru Jurnal de Încasări și Plăți (RJIP)</h2><p>Generat automat din toate înregistrările. Obligatoriu conform Codului Fiscal.</p></div>
+        <div class="card">
+          <div class="action-bar">
+            <div class="filter-row">
+              <select id="rj-luna" onchange="renderRJIP()"><option value="">Toate lunile</option>
+                <option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option>
+                <option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option>
+              </select>
+            </div>
+            <button class="btn-exp" onclick="exportTable('rjip')">↓ Export CSV</button>
+          </div>
+          <div class="table-wrap" id="tbl-rjip"><div class="empty-state">Nicio înregistrare</div></div>
+        </div>
+      </div>
+
+      <!-- REF -->
+      <div class="page" id="page-ref">
+        <div class="page-header"><h2>Registru de Evidență Fiscală (REF)</h2><p>Centralizator anual — baza pentru Declarația Unică.</p></div>
+        <div class="card">
+          <div class="card-title">Situație anuală</div>
+          <div id="ref-content"><div class="empty-state">Înregistrează date pentru a genera REF</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Istoricul REF salvat</div>
+          <div class="table-wrap" id="tbl-ref"><div class="empty-state">Niciun REF salvat</div></div>
+          <div style="margin-top:1rem">
+            <button class="btn-add" onclick="saveREF()">Salvează REF curent în Google Sheets</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTRACTE -->
+      <div class="page" id="page-contracte">
+        <div class="page-header"><h2>Registrul contractelor</h2><p>Clienți, furnizori, asigurători, bănci.</p></div>
+        <div class="card">
+          <div class="card-title">Adaugă contract / relație comercială</div>
+          <div class="form-grid fg-3">
+            <div class="form-group"><label>Data început *</label><input type="date" id="ct-datainc"></div>
+            <div class="form-group"><label>Data sfârșit</label><input type="date" id="ct-datasf"></div>
+            <div class="form-group"><label>Tip</label>
+              <select id="ct-tip">
+                <option>Client – persoană fizică</option><option>Client – persoană juridică</option>
+                <option>Asigurător</option><option>Bancă / Leasing</option>
+                <option>Furnizor servicii</option><option>Partener intermediere</option><option>Altele</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid fg-3">
+            <div class="form-group"><label>Partener / Companie *</label><input type="text" id="ct-partener" placeholder="Allianz, BCR..."></div>
+            <div class="form-group"><label>Valoare contract (lei)</label><input type="number" id="ct-val" placeholder="0.00"></div>
+            <div class="form-group"><label>Stare</label>
+              <select id="ct-stare"><option>Activ</option><option>Expirat</option><option>Suspendat</option><option>Reziliat</option></select>
+            </div>
+          </div>
+          <div class="form-group"><label>Descriere / Obiect contract</label><textarea id="ct-desc" placeholder="Detalii contract..."></textarea></div>
+          <button class="btn-add" onclick="addContract()">+ Adaugă contract</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Listă contracte</div>
+          <div class="table-wrap" id="tbl-contracte"><div class="empty-state">Niciun contract înregistrat</div></div>
+        </div>
+      </div>
+
+      <!-- TAXE -->
+      <div class="page" id="page-taxe">
+        <div class="page-header"><h2>Calcul taxe ANAF</h2><p>Estimare CAS, CASS și impozit pe venit — date extrase automat din înregistrări</p></div>
+        <div class="warn-box">⚠ Calcul orientativ 2024. Consultă un contabil pentru declarația oficială. SMMB 2024 = 3.300 lei.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="card">
+            <div class="card-title">Parametri calcul</div>
+            <div class="form-group" style="margin-bottom:10px"><label>Sistem de impozitare</label>
+              <select id="tx-sistem" onchange="calcTaxe()">
+                <option value="real">Sistem real (venit – cheltuieli deductibile)</option>
+                <option value="norma">Normă de venit</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:10px"><label>Normă de venit (lei) — dacă se aplică</label>
+              <input type="number" id="tx-norma" value="0" oninput="calcTaxe()">
+            </div>
+            <div class="form-group" style="margin-bottom:10px"><label>Alte venituri impozabile (lei) — chirii, dividende</label>
+              <input type="number" id="tx-alteven" value="0" oninput="calcTaxe()">
+            </div>
+            <div class="form-group" style="margin-bottom:10px"><label>Pilon III deductibil (max 4.800 lei/an)</label>
+              <input type="number" id="tx-pilon3" value="0" oninput="calcTaxe()">
+            </div>
+            <div class="form-group"><label>Venit ales CAS (minim 12×SMMB = 39.600 lei)</label>
+              <input type="number" id="tx-vcas" value="39600" oninput="calcTaxe()">
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Baza de calcul</div>
+            <div class="tax-row"><span class="t-lbl">Total încasări brute</span><span class="t-val" id="tx-inc">0 lei</span></div>
+            <div class="tax-row"><span class="t-lbl">Cheltuieli deductibile 100%</span><span class="t-val" id="tx-chd100">0 lei</span></div>
+            <div class="tax-row"><span class="t-lbl">Cheltuieli deductibile parțial</span><span class="t-val" id="tx-chdpart">0 lei</span></div>
+            <div class="tax-row"><span class="t-lbl">Total cheltuieli deductibile</span><span class="t-val" id="tx-chdtot">0 lei</span></div>
+            <div class="tax-row" style="border-top:2px solid var(--border2)"><span class="t-lbl" style="font-weight:500">Venit net impozabil</span><span class="t-val" id="tx-net" style="color:var(--accent)">0 lei</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Estimare obligații fiscale 2024</div>
+          <div class="tax-row">
+            <div><div class="t-lbl">CAS – contribuție pensie (25%)</div><div class="t-note" id="tx-cas-note"></div></div>
+            <span class="t-val" id="tx-cas">—</span>
+          </div>
+          <div class="tax-row">
+            <div><div class="t-lbl">CASS – contribuție sănătate (10%)</div><div class="t-note" id="tx-cass-note"></div></div>
+            <span class="t-val" id="tx-cass">—</span>
+          </div>
+          <div class="tax-row">
+            <div><div class="t-lbl">Impozit pe venit (10%)</div><div class="t-note" id="tx-imp-note"></div></div>
+            <span class="t-val" id="tx-imp">—</span>
+          </div>
+          <div class="tax-total">
+            <span class="t-lbl">Total de plătit estimat</span>
+            <span class="t-val" id="tx-total">0 lei</span>
+          </div>
+          <button class="btn-add" style="margin-top:0.5rem" onclick="saveREF()">Salvează situația în REF →</button>
+        </div>
+      </div>
+
+      <!-- SETARI -->
+      <div class="page" id="page-setari">
+        <div class="page-header"><h2>Setări</h2></div>
+        <div class="card">
+          <div class="card-title">Conexiune Google Sheets</div>
+          <div class="form-group" style="margin-bottom:10px"><label>URL Apps Script</label>
+            <input type="text" id="set-url" placeholder="https://script.google.com/macros/s/...">
+          </div>
+          <div class="form-group" style="margin-bottom:10px"><label>Nume PFA</label>
+            <input type="text" id="set-name" placeholder="Ionescu Alexandru PFA">
+          </div>
+          <button class="btn-add" onclick="saveSettings()" style="margin-right:8px">Salvează setări</button>
+          <button class="btn-exp" onclick="resetConfig()">Resetează tot</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Despre aplicație</div>
+          <p style="font-size:13px;color:var(--text2);line-height:1.8">
+            PFA Evidență Contabilă v2.0 — aplicație pentru activități de asigurări, turism, leasing și credite.<br>
+            Datele sunt stocate exclusiv în Google Sheets-ul tău.<br>
+            Registre incluse: RJIP, REF, Mijloace Fixe, Obiecte Inventar, Contracte.<br>
+            <strong>Nu se transmite niciun fel de date către terți.</strong>
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const SMMB = 3300;
+let CFG = {};
+let DATA = { incasari:[], cheltuieli:[], mijloace_fixe:[], obiecte_inv:[], contracte:[], ref:[] };
+
+function fmt(n) {
+  if (isNaN(n) || n === null || n === undefined) return '—';
+  return Number(n).toLocaleString('ro-RO', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' lei';
+}
+function fmtN(n) { return Number(n).toLocaleString('ro-RO', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function uid() { return Date.now() + Math.random().toString(36).substr(2,5); }
+
+function setSyncStatus(state, txt) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-text');
+  dot.className = 'sync-dot' + (state==='syncing'?' syncing':state==='error'?' error':'');
+  lbl.textContent = txt;
+}
+
+async function api(data) {
+  setSyncStatus('syncing','Sincronizare...');
+  try {
+    const r = await fetch(CFG.url, {method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'text/plain'}});
+    const j = await r.json();
+    setSyncStatus('ok','Sincronizat ✓');
+    return j;
+  } catch(e) {
+    setSyncStatus('error','Eroare conexiune');
+    return {ok:false};
+  }
+}
+
+async function apiGet(params) {
+  setSyncStatus('syncing','Se încarcă...');
+  try {
+    const qs = Object.entries(params).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&');
+    const r = await fetch(CFG.url+'?'+qs);
+    const j = await r.json();
+    setSyncStatus('ok','Sincronizat ✓');
+    return j;
+  } catch(e) {
+    setSyncStatus('error','Eroare');
+    return {ok:false};
+  }
+}
+
+function parseSheetData(rows, skip=1) {
+  if (!Array.isArray(rows) || rows.length <= skip) return [];
+  return rows.slice(skip).filter(r => r.some(c => c !== '' && c !== null && c !== undefined));
+}
+
+async function loadAll() {
+  const r = await apiGet({action:'getAll'});
+  if (!r.ok) return;
+  const d = r.data;
+  DATA.incasari = parseSheetData(d.incasari);
+  DATA.cheltuieli = parseSheetData(d.cheltuieli);
+  DATA.mijloace_fixe = parseSheetData(d.mijloace_fixe);
+  DATA.obiecte_inv = parseSheetData(d.obiecte_inv);
+  DATA.contracte = parseSheetData(d.contracte);
+  DATA.ref = parseSheetData(d.ref);
+  renderAll();
+}
+
+function renderAll() {
+  renderIncasari(); renderCheltuieli(); renderMF(); renderOI();
+  renderRJIP(); renderREF(); renderContracte(); updateDashboard(); calcTaxe();
+}
+
+function saveConfig() {
+  const url = document.getElementById('sheet-url').value.trim();
+  const name = document.getElementById('pfa-name').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    document.getElementById('setup-err').style.display='block';
+    document.getElementById('setup-err').textContent='URL invalid. Trebuie să înceapă cu https://script.google.com/macros/s/...';
+    return;
+  }
+  localStorage.setItem('pfa_url', url);
+  localStorage.setItem('pfa_name', name);
+  CFG = {url, name};
+  initApp();
+}
+
+function initApp() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('pfa-label').textContent = CFG.name || '';
+  document.getElementById('set-url').value = CFG.url || '';
+  document.getElementById('set-name').value = CFG.name || '';
+  setDates();
+  api({action:'initSheets', sheet:'all'});
+  loadAll();
+}
+
+function setDates() {
+  const t = today();
+  ['i-data','c-data','mf-data','mf-datapif','oi-data','ct-datainc'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = t;
+  });
+}
+
+function resetConfig() {
+  if (!confirm('Ești sigur? Aceasta nu șterge datele din Google Sheets.')) return;
+  localStorage.removeItem('pfa_url'); localStorage.removeItem('pfa_name');
+  location.reload();
+}
+
+function saveSettings() {
+  const url = document.getElementById('set-url').value.trim();
+  const name = document.getElementById('set-name').value.trim();
+  localStorage.setItem('pfa_url', url);
+  localStorage.setItem('pfa_name', name);
+  CFG = {url, name};
+  document.getElementById('pfa-label').textContent = name;
+  alert('Setări salvate!');
+}
+
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  if (id==='rjip') renderRJIP();
+  if (id==='ref') renderREF();
+  if (id==='taxe') calcTaxe();
+  if (id==='dashboard') updateDashboard();
+}
+
+function switchTab(el, tabId) {
+  el.closest('.card').querySelectorAll('.p-tab').forEach(t => t.classList.remove('active'));
+  el.closest('.card').querySelectorAll('.p-tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+  renderCheltuieli();
+}
+
+/* ---- INCASARI ---- */
+async function addIncasare() {
+  const data=document.getElementById('i-data').value, cat=document.getElementById('i-cat').value,
+    suma=parseFloat(document.getElementById('i-suma').value), desc=document.getElementById('i-desc').value,
+    client=document.getElementById('i-client').value, nrf=document.getElementById('i-nrfact').value;
+  if (!data||isNaN(suma)||suma<=0) { alert('Data și suma sunt obligatorii.'); return; }
+  const id=uid(), row=[id,data,cat,desc,client,suma,'RON',nrf];
+  DATA.incasari.push(row); DATA.incasari.sort((a,b)=>a[1].localeCompare(b[1]));
+  renderIncasari(); updateDashboard(); calcTaxe();
+  document.getElementById('i-suma').value=''; document.getElementById('i-desc').value=''; document.getElementById('i-nrfact').value=''; document.getElementById('i-client').value='';
+  await api({action:'append',sheet:'incasari',row});
+}
+
+async function delIncasare(id) {
+  if (!confirm('Ștergi această înregistrare?')) return;
+  DATA.incasari = DATA.incasari.filter(r=>String(r[0])!==String(id));
+  renderIncasari(); updateDashboard(); calcTaxe();
+  await api({action:'delete',sheet:'incasari',id});
+}
+
+function renderIncasari() {
+  const catF=document.getElementById('i-f-cat').value, lunaF=document.getElementById('i-f-luna').value;
+  let rows=DATA.incasari.filter(r=>(!catF||r[2]===catF)&&(!lunaF||r[1].substring(5,7)===lunaF));
+  const el=document.getElementById('tbl-incasari');
+  if (!rows.length) { el.innerHTML='<div class="empty-state">Nicio încasare</div>'; return; }
+  const tot=rows.reduce((s,r)=>s+Number(r[5]),0);
+  el.innerHTML=`<table><thead><tr><th>Data</th><th>Categorie</th><th>Client</th><th>Descriere</th><th>Nr. doc.</th><th style="text-align:right">Suma</th><th></th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><td>${r[1]}</td><td><span class="badge b-inc">${r[2]}</span></td><td>${r[4]||'—'}</td><td style="color:var(--text2)">${r[3]||'—'}</td><td style="font-family:var(--mono);font-size:12px">${r[7]||'—'}</td><td style="text-align:right;font-family:var(--mono);font-weight:500;color:var(--green)">${fmtN(r[5])} lei</td><td><button class="btn-del" onclick="delIncasare('${r[0]}')">✕</button></td></tr>`).join('')}
+    <tr class="tfoot-row"><td colspan="5">Total (${rows.length} înregistrări)</td><td style="text-align:right;color:var(--green)">${fmtN(tot)} lei</td><td></td></tr>
+  </tbody></table>`;
+}
+
+/* ---- CHELTUIELI ---- */
+function updateDed() {
+  const val = document.getElementById('c-cat').value;
+  const [,pct] = val.split('|');
+  const pctEl = document.getElementById('c-pct');
+  const badge = document.getElementById('c-ded-badge');
+  if (pct==='custom') { pctEl.value=50; pctEl.readOnly=false; }
+  else if (pct==='0') { pctEl.value=0; pctEl.readOnly=true; }
+  else { pctEl.value=parseInt(pct)||100; pctEl.readOnly=pct!=='custom'; }
+  calcDed();
+  const p=parseInt(pctEl.value);
+  badge.className='ded-badge '+(p===100?'ded-100':p===0?'ded-0':'ded-partial');
+  badge.textContent=p===100?'✓ 100% deductibil':p===0?'✗ Nedeductibil':'~ '+p+'% deductibil';
+}
+function calcDed() {
+  const suma=parseFloat(document.getElementById('c-suma').value)||0;
+  const pct=parseFloat(document.getElementById('c-pct').value)||0;
+  document.getElementById('c-sumaded').value=(suma*pct/100).toFixed(2);
+  const badge=document.getElementById('c-ded-badge');
+  badge.className='ded-badge '+(pct===100?'ded-100':pct===0?'ded-0':'ded-partial');
+  badge.textContent=pct===100?'✓ 100% deductibil':pct===0?'✗ Nedeductibil':'~ '+pct+'% deductibil';
+}
+
+async function addCheltuiala() {
+  const data=document.getElementById('c-data').value, catFull=document.getElementById('c-cat').value,
+    pct=parseFloat(document.getElementById('c-pct').value)||0,
+    suma=parseFloat(document.getElementById('c-suma').value),
+    sumaDed=parseFloat(document.getElementById('c-sumaded').value)||0,
+    desc=document.getElementById('c-desc').value, furnizor=document.getElementById('c-furnizor').value,
+    nrdoc=document.getElementById('c-nrdoc').value;
+  if (!data||isNaN(suma)||suma<=0) { alert('Data și suma sunt obligatorii.'); return; }
+  const [cat]=catFull.split('|');
+  const tipDed=pct===100?'100%':pct===0?'Nedeductibil':`${pct}%`;
+  const id=uid(), row=[id,data,cat,tipDed,pct,desc,furnizor,suma,sumaDed,nrdoc];
+  DATA.cheltuieli.push(row); DATA.cheltuieli.sort((a,b)=>a[1].localeCompare(b[1]));
+  renderCheltuieli(); updateDashboard(); calcTaxe();
+  document.getElementById('c-suma').value=''; document.getElementById('c-desc').value='';
+  document.getElementById('c-furnizor').value=''; document.getElementById('c-nrdoc').value='';
+  await api({action:'append',sheet:'cheltuieli',row});
+}
+
+async function delCheltuiala(id) {
+  if (!confirm('Ștergi această cheltuială?')) return;
+  DATA.cheltuieli = DATA.cheltuieli.filter(r=>String(r[0])!==String(id));
+  renderCheltuieli(); updateDashboard(); calcTaxe();
+  await api({action:'delete',sheet:'cheltuieli',id});
+}
+
+function renderCheltuieli() {
+  const lunaF=document.getElementById('c-f-luna').value;
+  const all=DATA.cheltuieli.filter(r=>!lunaF||r[1].substring(5,7)===lunaF);
+  const c100=all.filter(r=>Number(r[4])===100);
+  const cPart=all.filter(r=>Number(r[4])>0&&Number(r[4])<100);
+  const cNed=all.filter(r=>Number(r[4])===0);
+  buildCheltTable('tbl-cheltuieli-toate',all);
+  buildCheltTable('tbl-cheltuieli-100',c100);
+  buildCheltTable('tbl-cheltuieli-partial',cPart);
+  buildCheltTable('tbl-cheltuieli-neded',cNed);
+}
+
+function buildCheltTable(elId, rows) {
+  const el=document.getElementById(elId);
+  if (!rows.length) { el.innerHTML='<div class="empty-state">Nicio cheltuială</div>'; return; }
+  const totBrut=rows.reduce((s,r)=>s+Number(r[7]),0);
+  const totDed=rows.reduce((s,r)=>s+Number(r[8]),0);
+  el.innerHTML=`<table><thead><tr><th>Data</th><th>Categorie</th><th>Deductib.</th><th>Furnizor</th><th>Nr. doc.</th><th style="text-align:right">Sumă brută</th><th style="text-align:right">Sumă ded.</th><th></th></tr></thead><tbody>
+    ${rows.map(r=>{
+      const pct=Number(r[4]); const cls=pct===100?'ded-100':pct===0?'ded-0':'ded-partial';
+      return `<tr><td>${r[1]}</td><td><span class="badge b-cat">${r[2]}</span></td><td><span class="ded-badge ${cls}">${r[3]}</span></td><td>${r[6]||'—'}</td><td style="font-family:var(--mono);font-size:12px">${r[9]||'—'}</td><td style="text-align:right;font-family:var(--mono)">${fmtN(r[7])} lei</td><td style="text-align:right;font-family:var(--mono);font-weight:500;color:var(--red)">${fmtN(r[8])} lei</td><td><button class="btn-del" onclick="delCheltuiala('${r[0]}')">✕</button></td></tr>`;
+    }).join('')}
+    <tr class="tfoot-row"><td colspan="5">Total (${rows.length})</td><td style="text-align:right">${fmtN(totBrut)} lei</td><td style="text-align:right;color:var(--red)">${fmtN(totDed)} lei</td><td></td></tr>
+  </tbody></table>`;
+}
+
+/* ---- MIJLOACE FIXE ---- */
+function calcAmort() {
+  const val=parseFloat(document.getElementById('mf-val').value)||0;
+  const dur=parseFloat(document.getElementById('mf-dur').value)||1;
+  document.getElementById('mf-amortl').value=(val/dur).toFixed(2);
+}
+
+async function addMijlocFix() {
+  const data=document.getElementById('mf-data').value, den=document.getElementById('mf-den').value,
+    cat=document.getElementById('mf-cat').value, val=parseFloat(document.getElementById('mf-val').value),
+    dur=parseFloat(document.getElementById('mf-dur').value),
+    amortL=parseFloat(document.getElementById('mf-amortl').value)||0,
+    datapif=document.getElementById('mf-datapif').value, nrinv=document.getElementById('mf-nrinv').value,
+    obs=document.getElementById('mf-obs').value;
+  if (!data||!den||isNaN(val)||val<=0||isNaN(dur)||dur<=0) { alert('Completează câmpurile obligatorii.'); return; }
+  if (val<2500) { alert('Atenție: valoarea este sub 2.500 lei. Consideră înregistrarea ca Obiect de inventar.'); }
+  const id=uid(), row=[id,data,den,cat,val,dur,amortL,datapif||data,nrinv,obs];
+  DATA.mijloace_fixe.push(row);
+  renderMF(); updateDashboard();
+  document.getElementById('mf-val').value=''; document.getElementById('mf-den').value='';
+  document.getElementById('mf-amortl').value=''; document.getElementById('mf-nrinv').value=''; document.getElementById('mf-obs').value='';
+  await api({action:'append',sheet:'mijloace_fixe',row});
+}
+
+async function delMF(id) {
+  if (!confirm('Ștergi mijlocul fix?')) return;
+  DATA.mijloace_fixe=DATA.mijloace_fixe.filter(r=>String(r[0])!==String(id));
+  renderMF();
+  await api({action:'delete',sheet:'mijloace_fixe',id});
+}
+
+function renderMF() {
+  const el=document.getElementById('tbl-mf');
+  if (!DATA.mijloace_fixe.length) { el.innerHTML='<div class="empty-state">Niciun mijloc fix</div>'; return; }
+  const now=new Date(), totVal=DATA.mijloace_fixe.reduce((s,r)=>s+Number(r[4]),0);
+  el.innerHTML=`<table><thead><tr><th>Nr. inv.</th><th>Data PIF</th><th>Denumire</th><th>Categorie</th><th style="text-align:right">Valoare</th><th style="text-align:right">Durată (luni)</th><th style="text-align:right">Amort./lună</th><th style="text-align:right">Amort. cumulată</th><th></th></tr></thead><tbody>
+    ${DATA.mijloace_fixe.map(r=>{
+      const pif=new Date(r[7]||r[1]); const luni=Math.max(0,Math.floor((now-pif)/(30.44*24*3600*1000)));
+      const amortCum=Math.min(Number(r[4]),luni*Number(r[6]));
+      return `<tr><td style="font-family:var(--mono);font-size:12px">${r[8]||'—'}</td><td>${r[7]||r[1]}</td><td><strong>${r[2]}</strong><br><span style="font-size:11px;color:var(--text3)">${r[9]||''}</span></td><td><span class="badge b-mf">${r[3]}</span></td><td style="text-align:right;font-family:var(--mono)">${fmtN(r[4])} lei</td><td style="text-align:right">${r[5]} luni</td><td style="text-align:right;font-family:var(--mono)">${fmtN(r[6])} lei</td><td style="text-align:right;font-family:var(--mono)">${fmtN(amortCum)} lei</td><td><button class="btn-del" onclick="delMF('${r[0]}')">✕</button></td></tr>`;
+    }).join('')}
+    <tr class="tfoot-row"><td colspan="4">Total mijloace fixe</td><td style="text-align:right">${fmtN(totVal)} lei</td><td colspan="4"></td></tr>
+  </tbody></table>`;
+}
+
+/* ---- OBIECTE INVENTAR ---- */
+function calcOI() {
+  const cant=parseInt(document.getElementById('oi-cant').value)||1;
+  const val=parseFloat(document.getElementById('oi-valunit').value)||0;
+  document.getElementById('oi-valtot').value=(cant*val).toFixed(2);
+}
+
+async function addObiectInv() {
+  const data=document.getElementById('oi-data').value, den=document.getElementById('oi-den').value,
+    cant=parseInt(document.getElementById('oi-cant').value)||1,
+    valUnit=parseFloat(document.getElementById('oi-valunit').value),
+    valTot=parseFloat(document.getElementById('oi-valtot').value)||0,
+    loc=document.getElementById('oi-loc').value, stare=document.getElementById('oi-stare').value;
+  if (!data||!den||isNaN(valUnit)||valUnit<=0) { alert('Completează câmpurile obligatorii.'); return; }
+  const id=uid(), row=[id,data,den,cant,valUnit,valTot,loc,stare];
+  DATA.obiecte_inv.push(row);
+  renderOI();
+  document.getElementById('oi-den').value=''; document.getElementById('oi-valunit').value='';
+  document.getElementById('oi-valtot').value=''; document.getElementById('oi-loc').value='';
+  await api({action:'append',sheet:'obiecte_inv',row});
+}
+
+async function delOI(id) {
+  if (!confirm('Ștergi obiectul?')) return;
+  DATA.obiecte_inv=DATA.obiecte_inv.filter(r=>String(r[0])!==String(id));
+  renderOI();
+  await api({action:'delete',sheet:'obiecte_inv',id});
+}
+
+function renderOI() {
+  const el=document.getElementById('tbl-oi');
+  if (!DATA.obiecte_inv.length) { el.innerHTML='<div class="empty-state">Niciun obiect de inventar</div>'; return; }
+  const tot=DATA.obiecte_inv.reduce((s,r)=>s+Number(r[5]),0);
+  el.innerHTML=`<table><thead><tr><th>Data</th><th>Denumire</th><th style="text-align:right">Cant.</th><th style="text-align:right">Val/buc</th><th style="text-align:right">Valoare totală</th><th>Locație</th><th>Stare</th><th></th></tr></thead><tbody>
+    ${DATA.obiecte_inv.map(r=>`<tr><td>${r[1]}</td><td><strong>${r[2]}</strong></td><td style="text-align:right">${r[3]}</td><td style="text-align:right;font-family:var(--mono)">${fmtN(r[4])} lei</td><td style="text-align:right;font-family:var(--mono);font-weight:500">${fmtN(r[5])} lei</td><td>${r[6]||'—'}</td><td><span class="badge ${r[7]==='Activ'?'b-acc':r[7]==='Casat'?'b-exp':'b-cat'}">${r[7]}</span></td><td><button class="btn-del" onclick="delOI('${r[0]}')">✕</button></td></tr>`).join('')}
+    <tr class="tfoot-row"><td colspan="4">Total inventar</td><td style="text-align:right">${fmtN(tot)} lei</td><td colspan="3"></td></tr>
+  </tbody></table>`;
+}
+
+/* ---- RJIP ---- */
+function renderRJIP() {
+  const lunaF=document.getElementById('rj-luna').value;
+  const inc=DATA.incasari.map(r=>({data:r[1],tip:'Încasare',cat:r[2],desc:r[3]||'',client:r[4]||'',suma:Number(r[5]),id:r[0]}));
+  const chelt=DATA.cheltuieli.map(r=>({data:r[1],tip:'Plată',cat:r[2],desc:r[5]||'',client:r[6]||'',suma:Number(r[7]),id:r[0]}));
+  let all=[...inc,...chelt].sort((a,b)=>a.data.localeCompare(b.data));
+  if (lunaF) all=all.filter(r=>r.data.substring(5,7)===lunaF);
+  const el=document.getElementById('tbl-rjip');
+  if (!all.length) { el.innerHTML='<div class="empty-state">Nicio înregistrare</div>'; return; }
+  let sold=0;
+  const tInc=all.filter(r=>r.tip==='Încasare').reduce((s,r)=>s+r.suma,0);
+  const tPl=all.filter(r=>r.tip==='Plată').reduce((s,r)=>s+r.suma,0);
+  el.innerHTML=`<table><thead><tr><th>#</th><th>Data</th><th>Tip</th><th>Categorie</th><th>Descriere</th><th>Partener</th><th style="text-align:right">Încasări</th><th style="text-align:right">Plăți</th><th style="text-align:right">Sold</th></tr></thead><tbody>
+    ${all.map((r,i)=>{
+      const isInc=r.tip==='Încasare'; sold+=isInc?r.suma:-r.suma;
+      return `<tr><td style="font-family:var(--mono);font-size:12px;color:var(--text3)">${i+1}</td><td>${r.data}</td><td><span class="badge ${isInc?'b-inc':'b-exp'}">${r.tip}</span></td><td style="font-size:12px">${r.cat}</td><td style="color:var(--text2);font-size:12px">${r.desc||'—'}</td><td style="font-size:12px">${r.client||'—'}</td><td style="text-align:right;font-family:var(--mono);color:var(--green)">${isInc?fmtN(r.suma)+' lei':'—'}</td><td style="text-align:right;font-family:var(--mono);color:var(--red)">${!isInc?fmtN(r.suma)+' lei':'—'}</td><td style="text-align:right;font-family:var(--mono);font-weight:500">${fmtN(sold)} lei</td></tr>`;
+    }).join('')}
+    <tr class="tfoot-row"><td colspan="6">Total perioadă (${all.length} înreg.)</td><td style="text-align:right;color:var(--green)">${fmtN(tInc)} lei</td><td style="text-align:right;color:var(--red)">${fmtN(tPl)} lei</td><td style="text-align:right">${fmtN(tInc-tPl)} lei</td></tr>
+  </tbody></table>`;
+}
+
+/* ---- REF ---- */
+function renderREF() {
+  const tInc=DATA.incasari.reduce((s,r)=>s+Number(r[5]),0);
+  const c100=DATA.cheltuieli.filter(r=>Number(r[4])===100).reduce((s,r)=>s+Number(r[8]),0);
+  const cPart=DATA.cheltuieli.filter(r=>Number(r[4])>0&&Number(r[4])<100).reduce((s,r)=>s+Number(r[8]),0);
+  const cNed=DATA.cheltuieli.filter(r=>Number(r[4])===0).reduce((s,r)=>s+Number(r[7]),0);
+  const cTotDed=c100+cPart;
+  const net=Math.max(0,tInc-cTotDed);
+  const an=new Date().getFullYear();
+  document.getElementById('ref-content').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+      <div class="metric"><div class="m-label">An fiscal</div><div class="m-val">${an}</div></div>
+      <div class="metric"><div class="m-label">Total încasări</div><div class="m-val green">${fmtN(tInc)} lei</div></div>
+      <div class="metric"><div class="m-label">Chelt. ded. 100%</div><div class="m-val red">${fmtN(c100)} lei</div></div>
+      <div class="metric"><div class="m-label">Chelt. ded. parțial</div><div class="m-val amber">${fmtN(cPart)} lei</div></div>
+      <div class="metric"><div class="m-label">Chelt. nedeductibile</div><div class="m-val" style="color:var(--text2)">${fmtN(cNed)} lei</div></div>
+      <div class="metric"><div class="m-label">Total chelt. deductibile</div><div class="m-val red">${fmtN(cTotDed)} lei</div></div>
+    </div>
+    <div style="background:var(--accent-bg);border:1px solid #BFD0F8;border-radius:var(--r);padding:1rem;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:500;color:#1A3A8F">Venit net impozabil (REF)</span>
+      <span style="font-family:var(--mono);font-size:20px;font-weight:600;color:#1A3A8F">${fmtN(net)} lei</span>
+    </div>`;
+
+  const el=document.getElementById('tbl-ref');
+  if (!DATA.ref.length) { el.innerHTML='<div class="empty-state">Niciun REF salvat</div>'; return; }
+  el.innerHTML=`<table><thead><tr><th>An</th><th>Total venituri</th><th>Chelt. ded.</th><th>Venit net</th><th>CAS</th><th>CASS</th><th>Impozit</th><th>Total taxe</th></tr></thead><tbody>
+    ${DATA.ref.map(r=>`<tr><td style="font-weight:500">${r[1]}</td><td style="font-family:var(--mono)">${fmtN(r[2])} lei</td><td style="font-family:var(--mono)">${fmtN(r[3])} lei</td><td style="font-family:var(--mono);font-weight:500;color:var(--accent)">${fmtN(r[6])} lei</td><td style="font-family:var(--mono)">${fmtN(r[7])} lei</td><td style="font-family:var(--mono)">${fmtN(r[8])} lei</td><td style="font-family:var(--mono)">${fmtN(r[9])} lei</td><td style="font-family:var(--mono);font-weight:500;color:var(--red)">${fmtN(r[10])} lei</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+async function saveREF() {
+  const tInc=DATA.incasari.reduce((s,r)=>s+Number(r[5]),0);
+  const c100=DATA.cheltuieli.filter(r=>Number(r[4])===100).reduce((s,r)=>s+Number(r[8]),0);
+  const cPart=DATA.cheltuieli.filter(r=>Number(r[4])>0&&Number(r[4])<100).reduce((s,r)=>s+Number(r[8]),0);
+  const cNed=DATA.cheltuieli.filter(r=>Number(r[4])===0).reduce((s,r)=>s+Number(r[7]),0);
+  const net=Math.max(0,tInc-c100-cPart);
+  const vcas=parseFloat(document.getElementById('tx-vcas').value)||39600;
+  const cas=vcas>=SMMB*12?Math.round(vcas*0.25):0;
+  const cass=Math.round(Math.min(net,SMMB*60)*0.10);
+  const p3=Math.min(parseFloat(document.getElementById('tx-pilon3').value)||0,4800);
+  const imp=Math.round(Math.max(0,net-cas-p3)*0.10);
+  const total=cas+cass+imp;
+  const an=new Date().getFullYear();
+  const id=uid(), row=[id,an,tInc,c100+cPart,cPart,cNed,net,cas,cass,imp,total,'Generat automat'];
+  DATA.ref.push(row);
+  renderREF();
+  await api({action:'append',sheet:'ref',row});
+  alert('REF salvat cu succes în Google Sheets!');
+}
+
+/* ---- CONTRACTE ---- */
+async function addContract() {
+  const datainc=document.getElementById('ct-datainc').value, datasf=document.getElementById('ct-datasf').value,
+    partener=document.getElementById('ct-partener').value, tip=document.getElementById('ct-tip').value,
+    val=parseFloat(document.getElementById('ct-val').value)||0,
+    desc=document.getElementById('ct-desc').value, stare=document.getElementById('ct-stare').value;
+  if (!datainc||!partener) { alert('Data și partenerul sunt obligatorii.'); return; }
+  const id=uid(), row=[id,datainc,datasf,partener,tip,val,'RON',desc,stare];
+  DATA.contracte.push(row);
+  renderContracte();
+  document.getElementById('ct-partener').value=''; document.getElementById('ct-val').value='';
+  document.getElementById('ct-desc').value='';
+  await api({action:'append',sheet:'contracte',row});
+}
+
+async function delContract(id) {
+  if (!confirm('Ștergi contractul?')) return;
+  DATA.contracte=DATA.contracte.filter(r=>String(r[0])!==String(id));
+  renderContracte();
+  await api({action:'delete',sheet:'contracte',id});
+}
+
+function renderContracte() {
+  const el=document.getElementById('tbl-contracte');
+  if (!DATA.contracte.length) { el.innerHTML='<div class="empty-state">Niciun contract înregistrat</div>'; return; }
+  el.innerHTML=`<table><thead><tr><th>Data</th><th>Partener</th><th>Tip</th><th style="text-align:right">Valoare</th><th>Stare</th><th>Descriere</th><th></th></tr></thead><tbody>
+    ${DATA.contracte.map(r=>{
+      const st=r[8]; const sc=st==='Activ'?'b-acc':st==='Expirat'?'b-exp':'b-cat';
+      return `<tr><td>${r[1]}${r[2]?'<br><span style="font-size:11px;color:var(--text3)">→ '+r[2]+'</span>':''}</td><td><strong>${r[3]}</strong></td><td><span class="badge b-cat">${r[4]}</span></td><td style="text-align:right;font-family:var(--mono)">${r[5]?fmtN(r[5])+' lei':'—'}</td><td><span class="badge ${sc}">${r[8]}</span></td><td style="color:var(--text2);font-size:12px">${r[7]||'—'}</td><td><button class="btn-del" onclick="delContract('${r[0]}')">✕</button></td></tr>`;
+    }).join('')}
+  </tbody></table>`;
+}
+
+/* ---- DASHBOARD ---- */
+function updateDashboard() {
+  const tInc=DATA.incasari.reduce((s,r)=>s+Number(r[5]),0);
+  const cTotDed=DATA.cheltuieli.reduce((s,r)=>s+Number(r[8]),0);
+  const net=Math.max(0,tInc-cTotDed);
+  const taxEst=Math.round(net*0.33);
+  document.getElementById('dm-inc').textContent=fmtN(tInc)+' lei';
+  document.getElementById('dm-chd').textContent=fmtN(cTotDed)+' lei';
+  document.getElementById('dm-net').textContent=fmtN(net)+' lei';
+  document.getElementById('dm-tax').textContent=fmtN(taxEst)+' lei';
+  document.getElementById('dash-period').textContent='An '+new Date().getFullYear()+' — '+DATA.incasari.length+' încasări, '+DATA.cheltuieli.length+' cheltuieli';
+
+  const byInc={};
+  DATA.incasari.forEach(r=>{ byInc[r[2]]=(byInc[r[2]]||0)+Number(r[5]); });
+  const incEl=document.getElementById('chart-inc-dash');
+  if (!Object.keys(byInc).length) incEl.innerHTML='<div class="empty-state">Nicio înregistrare</div>';
+  else incEl.innerHTML='<div class="bar-chart">'+Object.entries(byInc).sort((a,b)=>b[1]-a[1]).map(([cat,sum])=>{
+    const pct=Math.round(sum/tInc*100)||1;
+    return `<div class="bar-row"><div class="bar-label"><span>${cat}</span><span>${fmtN(sum)} lei</span></div><div class="bar-track"><div class="bar-fill bar-green" style="width:${pct}%"></div></div></div>`;
+  }).join('')+'</div>';
+
+  const byChelt={};
+  DATA.cheltuieli.forEach(r=>{ byChelt[r[2]]=(byChelt[r[2]]||0)+Number(r[8]); });
+  const chEl=document.getElementById('chart-chelt-dash');
+  if (!Object.keys(byChelt).length) chEl.innerHTML='<div class="empty-state">Nicio înregistrare</div>';
+  else chEl.innerHTML='<div class="bar-chart">'+Object.entries(byChelt).sort((a,b)=>b[1]-a[1]).map(([cat,sum])=>{
+    const pct=Math.round(sum/cTotDed*100)||1;
+    return `<div class="bar-row"><div class="bar-label"><span>${cat}</span><span>${fmtN(sum)} lei</span></div><div class="bar-track"><div class="bar-fill bar-red" style="width:${pct}%"></div></div></div>`;
+  }).join('')+'</div>';
+
+  const recent=[...DATA.incasari.map(r=>({data:r[1],tip:'inc',cat:r[2],suma:Number(r[5])})),
+    ...DATA.cheltuieli.map(r=>({data:r[1],tip:'chelt',cat:r[2],suma:Number(r[7])}))].sort((a,b)=>b.data.localeCompare(a.data)).slice(0,10);
+  const recEl=document.getElementById('dash-recent');
+  if (!recent.length) recEl.innerHTML='<div class="empty-state">Nicio tranzacție</div>';
+  else recEl.innerHTML=`<table><thead><tr><th>Data</th><th>Tip</th><th>Categorie</th><th style="text-align:right">Suma</th></tr></thead><tbody>
+    ${recent.map(r=>`<tr><td>${r.data}</td><td><span class="badge ${r.tip==='inc'?'b-inc':'b-exp'}">${r.tip==='inc'?'Încasare':'Plată'}</span></td><td style="font-size:12px">${r.cat}</td><td style="text-align:right;font-family:var(--mono);font-weight:500;color:${r.tip==='inc'?'var(--green)':'var(--red)'}">${fmtN(r.suma)} lei</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+/* ---- TAXE ---- */
+function calcTaxe() {
+  const tInc=DATA.incasari.reduce((s,r)=>s+Number(r[5]),0);
+  const c100=DATA.cheltuieli.filter(r=>Number(r[4])===100).reduce((s,r)=>s+Number(r[8]),0);
+  const cPart=DATA.cheltuieli.filter(r=>Number(r[4])>0&&Number(r[4])<100).reduce((s,r)=>s+Number(r[8]),0);
+  const cTot=c100+cPart;
+  const sistem=document.getElementById('tx-sistem').value;
+  const norma=parseFloat(document.getElementById('tx-norma').value)||0;
+  let net=sistem==='real'?Math.max(0,tInc-cTot):norma;
+  const alteVen=parseFloat(document.getElementById('tx-alteven').value)||0;
+  const p3=Math.min(parseFloat(document.getElementById('tx-pilon3').value)||0,4800);
+  const vcas=parseFloat(document.getElementById('tx-vcas').value)||39600;
+
+  document.getElementById('tx-inc').textContent=fmtN(tInc)+' lei';
+  document.getElementById('tx-chd100').textContent=fmtN(c100)+' lei';
+  document.getElementById('tx-chdpart').textContent=fmtN(cPart)+' lei';
+  document.getElementById('tx-chdtot').textContent=fmtN(cTot)+' lei';
+  document.getElementById('tx-net').textContent=fmtN(net)+' lei';
+
+  const plafonCAS=SMMB*12;
+  const cas=vcas>=plafonCAS?Math.round(vcas*0.25):0;
+  const bazaCASS=Math.min(net+alteVen,SMMB*60);
+  const cass=bazaCASS>=SMMB*6?Math.round(bazaCASS*0.10):Math.round(SMMB*6*0.10);
+  const bazaImp=Math.max(0,net-cas-p3);
+  const imp=Math.round(bazaImp*0.10);
+  const total=cas+cass+imp;
+
+  document.getElementById('tx-cas').textContent=cas?fmtN(cas)+' lei':'0 lei (sub prag)';
+  document.getElementById('tx-cas-note').textContent=`Venit ales: ${fmtN(vcas)} lei × 25%`;
+  document.getElementById('tx-cass').textContent=fmtN(cass)+' lei';
+  document.getElementById('tx-cass-note').textContent=`Baza CASS: ${fmtN(bazaCASS)} lei × 10% (plafon 60×SMMB)`;
+  document.getElementById('tx-imp').textContent=fmtN(imp)+' lei';
+  document.getElementById('tx-imp-note').textContent=`Baza: ${fmtN(bazaImp)} lei (venit net − CAS − Pilon III) × 10%`;
+  document.getElementById('tx-total').textContent=fmtN(total)+' lei';
+}
+
+/* ---- EXPORT CSV ---- */
+function exportTable(type) {
+  let rows=[], headers=[], filename='';
+  if (type==='inc') {
+    headers=['ID','Data','Categorie','Descriere','Client','Suma (lei)','Moneda','Nr. document'];
+    rows=DATA.incasari; filename='Incasari_PFA.csv';
+  } else if (type==='chelt') {
+    headers=['ID','Data','Categorie','Tip deductibilitate','% Ded','Descriere','Furnizor','Suma bruta','Suma deductibila','Nr. document'];
+    rows=DATA.cheltuieli; filename='Cheltuieli_PFA.csv';
+  } else if (type==='rjip') {
+    const inc=DATA.incasari.map(r=>['Încasare',r[1],r[2],r[3]||'',r[4]||'',r[5],0]);
+    const chelt=DATA.cheltuieli.map(r=>['Plată',r[1],r[2],r[5]||'',r[6]||'',0,r[7]]);
+    const all=[...inc,...chelt].sort((a,b)=>a[1].localeCompare(b[1]));
+    let sold=0;
+    headers=['Tip','Data','Categorie','Descriere','Partener','Incasari (lei)','Plati (lei)','Sold (lei)'];
+    rows=all.map(r=>{ sold+=Number(r[5])-Number(r[6]); return [...r,sold]; });
+    filename='RJIP_PFA.csv';
+  }
+  if (!rows.length) { alert('Nu există date de exportat.'); return; }
+  const csv=[headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(';')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url);
+}
+
+function exportAllCSV() {
+  exportTable('inc'); setTimeout(()=>exportTable('chelt'),500); setTimeout(()=>exportTable('rjip'),1000);
+}
+
+function copyScript() {
+  const txt=document.getElementById('script-code').textContent;
+  navigator.clipboard.writeText(txt).then(()=>{ const b=document.querySelector('.copy-btn'); b.textContent='✓ Copiat!'; setTimeout(()=>b.textContent='Copiază codul',2000); });
+}
+
+/* ---- INIT ---- */
+const savedUrl=localStorage.getItem('pfa_url');
+const savedName=localStorage.getItem('pfa_name');
+if (savedUrl) {
+  CFG={url:savedUrl, name:savedName||''};
+  initApp();
+}
+</script>
+</body>
+</html>
